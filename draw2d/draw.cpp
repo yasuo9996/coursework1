@@ -11,66 +11,66 @@ bool clip_line( Rect2F const& aTargetArea, Vec2f& aBegin, Vec2f& aEnd )
 	float ymin = aTargetArea.ymin;
 	float ymax = aTargetArea.ymin + aTargetArea.height;
 	
-	// 检查线段端点是否在裁剪区域内
-	// 注意：使用严格小于比较，因为像素索引从0到width-1/height-1
+	// Check if line segment endpoints are within the clipping region
+// Note: Use strict less-than comparison because pixel indices range from 0 to width-1/height-1
 	bool begin_inside = (aBegin.x >= xmin && aBegin.x < xmax && aBegin.y >= ymin && aBegin.y < ymax);
 	bool end_inside = (aEnd.x >= xmin && aEnd.x < xmax && aEnd.y >= ymin && aEnd.y < ymax);
 	
-	// 情况1: 两个端点都在裁剪区域内
+	// Case 1: Both endpoints are within the clipping region
 	if (begin_inside && end_inside) {
 		return true;
 	}
 	
-	// 处理垂直线（x坐标相同）
+	// Handle vertical lines (same x-coordinate)
 	if (aBegin.x == aEnd.x) {
-		// 如果垂直线在裁剪区域外，返回false
+		// If the vertical line is outside the clipping region, return false
 		if (aBegin.x < xmin || aBegin.x >= xmax) return false;
 		
-		// 计算线段在y轴上的可见部分
+		// Calculate the visible portion of the line segment on the y-axis
 		float y_start = std::max(ymin, std::min(aBegin.y, aEnd.y));
 		float y_end = std::min(ymax, std::max(aBegin.y, aEnd.y));
 		
-		// 如果线段完全在裁剪区域外，返回false
+		// If the line segment is completely outside the clipping region, return false
 		if (y_start >= y_end) return false;
 		
-		// 更新线段的y坐标到可见部分
+		// Update the y-coordinates of the line segment to the visible portion
 		aBegin.y = y_start;
 		aEnd.y = y_end;
 		return true;
 	}
 	
-	// 处理水平线（y坐标相同）
+	// Handle horizontal lines (same y-coordinate)
 	if (aBegin.y == aEnd.y) {
-		// 如果水平线在裁剪区域外，返回false
+		// If the horizontal line is outside the clipping region, return false
 		if (aBegin.y < ymin || aBegin.y >= ymax) return false;
 		
-		// 计算线段在x轴上的可见部分
+		// Calculate the visible portion of the line segment on the x-axis
 		float x_start = std::max(xmin, std::min(aBegin.x, aEnd.x));
 		float x_end = std::min(xmax, std::max(aBegin.x, aEnd.x));
 		
-		// 如果线段完全在裁剪区域外，返回false
+		// If the line segment is completely outside the clipping region, return false
 		if (x_start >= x_end) return false;
 		
-		// 更新线段的x坐标到可见部分
+		// Update the x-coordinates of the line segment to the visible portion
 		aBegin.x = x_start;
 		aEnd.x = x_end;
 		return true;
 	}
 	
-	// 一般线段裁剪 - 使用Cohen-Sutherland算法
+	// General line segment clipping - using Cohen-Sutherland algorithm
 	float dx = aEnd.x - aBegin.x;
 	float dy = aEnd.y - aBegin.y;
 	
-	// 如果线段是点，直接返回false
+	// If the line segment is a point, return false directly
 	if (dx == 0 && dy == 0) {
 		return false;
 	}
 	
-	// 计算与四条边的交点参数
-	float t_enter = 0.0f;  // 进入裁剪区域的参数
-	float t_exit = 1.0f;   // 离开裁剪区域的参数
+	// Calculate intersection parameters with the four boundaries
+	float t_enter = 0.0f;  // Parameter for entering the clipping region
+	float t_exit = 1.0f;   // Parameter for exiting the clipping region
 	
-	// 与左右边界的交点
+	// Intersections with left and right boundaries
 	if (dx != 0) {
 		float t_left = (xmin - aBegin.x) / dx;
 		float t_right = (xmax - aBegin.x) / dx;
@@ -84,7 +84,7 @@ bool clip_line( Rect2F const& aTargetArea, Vec2f& aBegin, Vec2f& aEnd )
 		}
 	}
 	
-	// 与上下边界的交点
+	// Intersections with top and bottom boundaries
 	if (dy != 0) {
 		float t_bottom = (ymin - aBegin.y) / dy;
 		float t_top = (ymax - aBegin.y) / dy;
@@ -98,15 +98,15 @@ bool clip_line( Rect2F const& aTargetArea, Vec2f& aBegin, Vec2f& aEnd )
 		}
 	}
 	
-	// 检查是否有有效交点
+	// Check if there are valid intersections
 	if (t_enter <= t_exit && t_enter >= 0 && t_exit <= 1) {
-		// 计算裁剪后的线段端点
+		// Calculate the clipped line segment endpoints
 		float new_begin_x = aBegin.x + t_enter * dx;
 		float new_begin_y = aBegin.y + t_enter * dy;
 		float new_end_x = aBegin.x + t_exit * dx;
 		float new_end_y = aBegin.y + t_exit * dy;
 		
-		// 更新线段端点
+		// Update the line segment endpoints
 		aBegin.x = new_begin_x;
 		aBegin.y = new_begin_y;
 		aEnd.x = new_end_x;
@@ -115,13 +115,13 @@ bool clip_line( Rect2F const& aTargetArea, Vec2f& aBegin, Vec2f& aEnd )
 		return true;
 	}
 	
-	// 没有有效交点，线段完全在裁剪区域外
+	// No valid intersections, line segment is completely outside the clipping region
 	return false;
 }
 
 void draw_clip_line_solid( Surface& aSurface, Vec2f aBegin, Vec2f aEnd, ColorU8_sRGB aColor )
 {
-	// 使用Bresenham算法绘制单像素宽度连续线条
+	// Use Bresenham algorithm to draw single-pixel width continuous lines
 	auto const surfaceWidth  = static_cast<int>( aSurface.get_width() );
 	auto const surfaceHeight = static_cast<int>( aSurface.get_height() );
 
@@ -150,7 +150,7 @@ void draw_clip_line_solid( Surface& aSurface, Vec2f aBegin, Vec2f aEnd, ColorU8_
 	int x1 = clamp_to_surface_x( aEnd.x );
 	int y1 = clamp_to_surface_y( aEnd.y );
 	
-	// 计算坐标差
+	// Calculate coordinate differences
 	int dx = abs(x1 - x0);
 	int dy = abs(y1 - y0);
 	bool steep = false;
@@ -209,13 +209,13 @@ void draw_line_solid( Surface& aSurface, Rect2F const& aClipArea, Vec2f aBegin, 
 
 void draw_triangle_interp( Surface& aSurface, Vec2f aP0, Vec2f aP1, Vec2f aP2, ColorF aC0, ColorF aC1, ColorF aC2 )
 {
-	// 计算三角形的边界框
+	// Calculate the bounding box of the triangle
 	float min_x = std::min({aP0.x, aP1.x, aP2.x});
 	float max_x = std::max({aP0.x, aP1.x, aP2.x});
 	float min_y = std::min({aP0.y, aP1.y, aP2.y});
 	float max_y = std::max({aP0.y, aP1.y, aP2.y});
 	
-	// 将边界框与裁剪区域相交
+	// Intersect the bounding box with the clipping region
 	Rect2F clip_area = aSurface.clip_area();
 	float clip_xmax = clip_area.xmin + clip_area.width;
 	float clip_ymax = clip_area.ymin + clip_area.height;
@@ -224,55 +224,55 @@ void draw_triangle_interp( Surface& aSurface, Vec2f aP0, Vec2f aP1, Vec2f aP2, C
 	min_y = std::max(min_y, clip_area.ymin);
 	max_y = std::min(max_y, clip_ymax);
 	
-	// 转换为整数像素坐标
-	// 使用 floor 确保包含所有可能被覆盖的像素
+	// Convert to integer pixel coordinates
+	// Use floor to ensure all potentially covered pixels are included
 	int start_x = static_cast<int>(std::floor(min_x));
 	int end_x = static_cast<int>(std::floor(max_x));
 	int start_y = static_cast<int>(std::floor(min_y));
 	int end_y = static_cast<int>(std::floor(max_y));
 	
-	// 确保坐标在表面范围内（0 <= x < width, 0 <= y < height）
+	// Ensure coordinates are within surface bounds (0 <= x < width, 0 <= y < height)
 	start_x = std::max(0, start_x);
 	end_x = std::min(static_cast<int>(aSurface.get_width() - 1), end_x);
 	start_y = std::max(0, start_y);
 	end_y = std::min(static_cast<int>(aSurface.get_height() - 1), end_y);
 	
-	// 计算三角形的面积（用于重心坐标计算）
+	// Calculate triangle area (for barycentric coordinates)
 	float area = (aP1.y - aP2.y) * (aP0.x - aP2.x) + (aP2.x - aP1.x) * (aP0.y - aP2.y);
 	
-	// 如果面积为0，三角形退化，不绘制
+	// If area is 0, triangle is degenerate, don't draw
 	if (std::abs(area) < 1e-6f) {
 		return;
 	}
 	
 	float inv_area = 1.0f / area;
 	
-	// 遍历边界框内的每个像素
+	// Iterate through each pixel in the bounding box
 	for (int y = start_y; y <= end_y; ++y) {
 		for (int x = start_x; x <= end_x; ++x) {
-			// 当前像素的中心点
+			// Current pixel center point
 			Vec2f pixel_center = Vec2f{static_cast<float>(x) + 0.5f, static_cast<float>(y) + 0.5f};
 			
-			// 计算重心坐标
+			// Calculate barycentric coordinates
 			float w0 = ((aP1.y - aP2.y) * (pixel_center.x - aP2.x) + (aP2.x - aP1.x) * (pixel_center.y - aP2.y)) * inv_area;
 			float w1 = ((aP2.y - aP0.y) * (pixel_center.x - aP0.x) + (aP0.x - aP2.x) * (pixel_center.y - aP0.y)) * inv_area;
 			float w2 = 1.0f - w0 - w1;
 			
-			// 检查像素是否在三角形内部
+			// Check if pixel is inside the triangle
 			if (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f) {
-				// 在三角形内部，进行颜色插值
+				// Inside the triangle, perform color interpolation
 				ColorF interpolated_color{
 					w0 * aC0.r + w1 * aC1.r + w2 * aC2.r,
 					w0 * aC0.g + w1 * aC1.g + w2 * aC2.g,
 					w0 * aC0.b + w1 * aC1.b + w2 * aC2.b
 				};
 				
-				// 确保颜色值在有效范围内
+				// Ensure color values are within valid range
 				interpolated_color.r = std::max(0.0f, std::min(1.0f, interpolated_color.r));
 				interpolated_color.g = std::max(0.0f, std::min(1.0f, interpolated_color.g));
 				interpolated_color.b = std::max(0.0f, std::min(1.0f, interpolated_color.b));
 				
-				// 转换为sRGB并绘制像素
+				// Convert to sRGB and draw the pixel
 				ColorU8_sRGB final_color = linear_to_srgb(interpolated_color);
 				aSurface.set_pixel_srgb(x, y, final_color);
 			}
