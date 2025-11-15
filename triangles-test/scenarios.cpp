@@ -147,6 +147,7 @@ TEST_CASE( "Scenario2: Color Interpolation Accuracy", "[interpolation][color]" )
 	}
 }
 
+TEST_CASE( "Scenario3: Triangle Degeneration and Boundary Cases", "[degenerate][boundary]" )
 {
 	Surface surface( 320, 240 );
 	surface.clear();
